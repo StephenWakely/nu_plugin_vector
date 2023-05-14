@@ -1,0 +1,10 @@
+query ComponentQuery {
+  components {
+	  __typename
+    nodes {
+		  __typename
+      componentId
+      componentType
+    }
+  }
+}
