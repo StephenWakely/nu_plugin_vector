@@ -5,6 +5,33 @@ query ComponentQuery {
 		  __typename
       componentId
       componentType
+      
+      ... on Sink {
+        metrics {
+    		  __typename
+          sentEventsTotal {
+            sentEventsTotal
+          }
+        }
+      }
+      
+      ... on Transform {
+        metrics {
+    		  __typename
+          processedEventsTotal {
+            processedEventsTotal
+          }
+        }
+      }
+      
+      ... on Source {
+        metrics {
+    		  __typename
+          receivedEventsTotal {
+            receivedEventsTotal
+          }
+        }
+      }
     }
   }
 }

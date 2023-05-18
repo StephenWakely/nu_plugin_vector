@@ -1,5 +1,5 @@
 use nu_plugin::{EvaluatedCall, LabeledError};
-use nu_protocol::Value;
+use nu_protocol::{Span, Value};
 
 use crate::query::{component_query, components};
 
@@ -24,11 +24,9 @@ pub fn run_query(call: &EvaluatedCall) -> Result<Value, LabeledError> {
                     .components
                     .nodes
                     .iter()
-                    .map(|node| Value::String {
-                        val: node.component_id.clone(),
-                        span: call.head,
-                    })
+                    .map(|node| node_to_record(node, call.head))
                     .collect();
+                // Value::as_block(&self)
                 Ok(Value::List {
                     vals,
                     span: call.head,
@@ -41,4 +39,54 @@ pub fn run_query(call: &EvaluatedCall) -> Result<Value, LabeledError> {
             }),
         }
     })
+}
+
+fn node_to_record(node: &component_query::ComponentQueryComponentsNodes, span: Span) -> Value {
+    let cols = vec![
+        "component_id".to_string(),
+        "component_type".to_string(),
+        "events".to_string(),
+    ];
+
+    let event = match &node.on {
+        component_query::ComponentQueryComponentsNodesOn::Sink(sink) => {
+            sink.metrics
+                .sent_events_total
+                .as_ref()
+                .unwrap()
+                .sent_events_total
+        }
+        component_query::ComponentQueryComponentsNodesOn::Source(source) => {
+            source
+                .metrics
+                .received_events_total
+                .as_ref()
+                .unwrap()
+                .received_events_total
+        }
+        component_query::ComponentQueryComponentsNodesOn::Transform(transform) => {
+            transform
+                .metrics
+                .processed_events_total
+                .as_ref()
+                .unwrap()
+                .processed_events_total
+        }
+    };
+
+    Value::Record {
+        cols,
+        vals: vec![
+            Value::String {
+                val: node.component_id.clone(),
+                span,
+            },
+            Value::String {
+                val: node.component_type.clone(),
+                span,
+            },
+            Value::Float { val: event, span },
+        ],
+        span,
+    }
 }
